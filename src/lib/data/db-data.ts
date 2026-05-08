@@ -4,6 +4,7 @@ import { format } from "date-fns";
 
 import { calculateProgress, calculateTaskHeadProgress, roundToTwo } from "@/lib/computations/progress";
 import { calculateProductivityOutputs, computeProductivityInsight } from "@/lib/computations/productivity";
+import { requireCurrentUserProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type {
   ProjectSummary,
@@ -131,9 +132,16 @@ function buildProductivityMonthly(tasks: TaskSummary[]): ProductivityChartPoint[
 }
 
 export async function getAppDataset(): Promise<AppDataset> {
+  const currentUser = await requireCurrentUserProfile();
   const [users, projects, progressUpdates] = await Promise.all([
-    prisma.user.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.user.findMany({
+      where: { id: currentUser.id },
+      orderBy: { createdAt: "asc" },
+    }),
     prisma.project.findMany({
+      where: {
+        createdById: currentUser.id,
+      },
       include: {
         taskHeads: {
           include: {
@@ -152,6 +160,15 @@ export async function getAppDataset(): Promise<AppDataset> {
       orderBy: { createdAt: "desc" },
     }),
     prisma.progressUpdate.findMany({
+      where: {
+        task: {
+          taskHead: {
+            project: {
+              createdById: currentUser.id,
+            },
+          },
+        },
+      },
       include: {
         task: {
           include: {

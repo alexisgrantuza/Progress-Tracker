@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { calculateProgress, roundToTwo } from "@/lib/computations/progress";
 import { calculateProductivityOutputs } from "@/lib/computations/productivity";
-import { requireCurrentUser, requireCurrentUserProfile } from "@/lib/auth";
+import { requireCurrentUserProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   progressUpdateSchema,
@@ -171,6 +171,20 @@ function refreshAppPaths(projectId?: string) {
   }
 }
 
+async function assertProjectAccess(projectId: string, userId: string) {
+  const project = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      createdById: userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return Boolean(project);
+}
+
 export async function createProject(values: ProjectFormValues): Promise<ActionResult> {
   const parsed = projectSchema.safeParse(values);
 
@@ -203,7 +217,13 @@ export async function updateProject(projectId: string, values: ProjectFormValues
     return { ok: false, message: "Please check the project details." };
   }
 
-  await requireCurrentUser();
+  const user = await requireCurrentUserProfile();
+  const canAccessProject = await assertProjectAccess(projectId, user.id);
+
+  if (!canAccessProject) {
+    return { ok: false, message: "Project was not found for your account." };
+  }
+
   await prisma.project.update({
     where: { id: projectId },
     data: {
@@ -227,7 +247,13 @@ export async function createTaskHead(projectId: string, values: TaskHeadFormValu
     return { ok: false, message: "Please check the task head details." };
   }
 
-  await requireCurrentUser();
+  const user = await requireCurrentUserProfile();
+  const canAccessProject = await assertProjectAccess(projectId, user.id);
+
+  if (!canAccessProject) {
+    return { ok: false, message: "Project was not found for your account." };
+  }
+
   const taskHead = await prisma.taskHead.create({
     data: {
       projectId,
@@ -250,7 +276,24 @@ export async function createTask(projectId: string, values: TaskFormValues): Pro
     return { ok: false, message: "Please check the task setup." };
   }
 
-  await requireCurrentUser();
+  const user = await requireCurrentUserProfile();
+  const taskHead = await prisma.taskHead.findFirst({
+    where: {
+      id: parsed.data.task_head_id,
+      projectId,
+      project: {
+        createdById: user.id,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!taskHead) {
+    return { ok: false, message: "Task head was not found for your account." };
+  }
+
   const productivityOutputs = calculateProductivityOutputs({
     outputPerHour: parsed.data.output_per_hour,
     skilledWorkers: parsed.data.skilled_workers,
@@ -304,20 +347,46 @@ export async function updateTask(
     return { ok: false, message: "Please check the task setup." };
   }
 
-  await requireCurrentUser();
+  const user = await requireCurrentUserProfile();
   const existingTask = await prisma.task.findUnique({
     where: { id: taskId },
     include: {
       taskHead: {
         select: {
           projectId: true,
+          project: {
+            select: {
+              createdById: true,
+            },
+          },
         },
       },
     },
   });
 
-  if (!existingTask || existingTask.taskHead.projectId !== projectId) {
+  if (
+    !existingTask ||
+    existingTask.taskHead.projectId !== projectId ||
+    existingTask.taskHead.project.createdById !== user.id
+  ) {
     return { ok: false, message: "Task was not found in this project." };
+  }
+
+  const destinationTaskHead = await prisma.taskHead.findFirst({
+    where: {
+      id: parsed.data.task_head_id,
+      projectId,
+      project: {
+        createdById: user.id,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!destinationTaskHead) {
+    return { ok: false, message: "Task head was not found for your account." };
   }
 
   const progressPercentage = calculateProgress(
@@ -368,7 +437,7 @@ export async function updateTask(
 }
 
 export async function deleteTask(taskId: string): Promise<ActionResult> {
-  await requireCurrentUser();
+  const user = await requireCurrentUserProfile();
 
   const task = await prisma.task.findUnique({
     where: { id: taskId },
@@ -376,12 +445,17 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
       taskHead: {
         select: {
           projectId: true,
+          project: {
+            select: {
+              createdById: true,
+            },
+          },
         },
       },
     },
   });
 
-  if (!task) {
+  if (!task || task.taskHead.project.createdById !== user.id) {
     return { ok: false, message: "Task was not found or was already deleted." };
   }
 
@@ -395,17 +469,22 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
 }
 
 export async function deleteTaskHead(taskHeadId: string): Promise<ActionResult> {
-  await requireCurrentUser();
+  const user = await requireCurrentUserProfile();
 
   const taskHead = await prisma.taskHead.findUnique({
     where: { id: taskHeadId },
     select: {
       id: true,
       projectId: true,
+      project: {
+        select: {
+          createdById: true,
+        },
+      },
     },
   });
 
-  if (!taskHead) {
+  if (!taskHead || taskHead.project.createdById !== user.id) {
     return { ok: false, message: "Task head was not found or was already deleted." };
   }
 
@@ -429,11 +508,19 @@ export async function createProgressUpdate(values: ProgressUpdateFormValues): Pr
   const task = await prisma.task.findUnique({
     where: { id: parsed.data.taskId },
     include: {
-      taskHead: true,
+      taskHead: {
+        include: {
+          project: {
+            select: {
+              createdById: true,
+            },
+          },
+        },
+      },
     },
   });
 
-  if (!task) {
+  if (!task || task.taskHead.project.createdById !== user.id) {
     return { ok: false, message: "Selected task was not found." };
   }
 
