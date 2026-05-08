@@ -15,6 +15,16 @@ export type ProjectStatus =
   | "Planning"
   | "Ongoing";
 
+export type ProjectCategory = "Structural" | "Architectural";
+
+export type WorkerTrade =
+  | "Carpenter"
+  | "Mason"
+  | "Steelman"
+  | "Welder"
+  | "Painter"
+  | "Operator";
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -36,6 +46,7 @@ export interface ProjectRecord {
 export interface TaskHeadRecord {
   id: string;
   project_id: string;
+  category: ProjectCategory;
   name: string;
   start_date: string;
   end_date: string;
@@ -53,6 +64,14 @@ export interface TaskRecord {
   end_date: string;
   skilled_workers: number;
   helpers: number;
+  worker_trade: WorkerTrade;
+  output_per_hour: number;
+  daily_output: number;
+  weekly_output: number;
+  monthly_output_by_weeks: number;
+  monthly_output_by_days: number;
+  weeks_per_month: number;
+  days_per_month: number;
   standard_output: number;
   created_at: string;
 }

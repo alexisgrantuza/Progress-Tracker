@@ -7,7 +7,7 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Settings"
         title="MVP configuration"
-        description="This screen summarizes the runtime setup for demo mode and the Supabase integration points prepared for production wiring."
+        description="This screen summarizes the current Supabase-backed auth setup and the database scaffolding available for production data."
       />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-0 bg-white/90">
@@ -15,8 +15,8 @@ export default function SettingsPage() {
             <CardTitle>Authentication mode</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-6 text-slate-600">
-            <p>Current MVP login uses a lightweight demo session cookie so supervisors and engineers can enter the dashboard immediately.</p>
-            <p>Production hookup is prepared through `@supabase/ssr` in `src/lib/supabase/client.ts` and `src/lib/supabase/server.ts`.</p>
+            <p>Current login is handled by Supabase Auth with SSR-aware clients in `src/lib/supabase/client.ts` and `src/lib/supabase/server.ts`.</p>
+            <p>User display data is resolved on the server in `src/lib/auth.ts`, with role details pulled from the `public.users` table when available.</p>
           </CardContent>
         </Card>
         <Card className="border-0 bg-white/90">
@@ -25,7 +25,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm leading-6 text-slate-600">
             <p>Schema SQL for the MVP tables lives in `supabase/migrations/20260502_000001_mvp_schema.sql`.</p>
-            <p>Seeded construction data is loaded from `src/lib/data/sample-data.ts` so UI flows are testable before connecting a real database.</p>
+            <p>Project, task, progress, and report data is loaded from Supabase Postgres through Prisma.</p>
           </CardContent>
         </Card>
       </div>

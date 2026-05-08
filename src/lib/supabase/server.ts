@@ -3,25 +3,33 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function createSupabaseServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/config";
 
-  if (!url || !anonKey) {
+export async function createSupabaseServerClient() {
+  const url = getSupabaseUrl();
+  const publishableKey = getSupabasePublishableKey();
+
+  if (!url || !publishableKey) {
     return null;
   }
 
   const cookieStore = await cookies();
 
-  return createServerClient(url, anonKey, {
+  return createServerClient(url, publishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
       setAll(cookieValues) {
-        cookieValues.forEach(({ name, value, options }) => {
-          cookieStore.set(name, value, options);
-        });
+        try {
+          cookieValues.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // Next.js only allows cookie writes in Server Actions, Route Handlers,
+          // and other request mutation contexts. During a Server Component render
+          // we still want auth reads to work without crashing the request.
+        }
       },
     },
   });

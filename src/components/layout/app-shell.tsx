@@ -140,7 +140,7 @@ export function AppShell({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-900">
-                {user?.name ?? "Demo User"}
+                {user?.name ?? "Tracker User"}
               </p>
               <span
                 className={cn(
@@ -192,7 +192,7 @@ export function AppShell({
                   <User className="size-3" />
                 </div>
                 <span className="text-xs font-medium text-slate-700">
-                  {user?.name ?? "Demo User"}
+                  {user?.name ?? "Tracker User"}
                 </span>
               </div>
             </div>

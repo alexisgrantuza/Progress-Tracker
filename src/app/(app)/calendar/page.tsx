@@ -1,9 +1,9 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { ProjectCalendar } from "@/components/calendar/project-calendar";
-import { getAppDataset } from "@/lib/data/sample-data";
+import { getAppDataset } from "@/lib/data/db-data";
 
-export default function CalendarPage() {
-  const dataset = getAppDataset();
+export default async function CalendarPage() {
+  const dataset = await getAppDataset();
 
   return (
     <div className="animate-page-in space-y-6">

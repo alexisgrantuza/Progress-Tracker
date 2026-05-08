@@ -1,6 +1,6 @@
 import { cn, formatPercent } from "@/lib/utils";
 
-function getProgressColor(_value: number): string {
+function getProgressColor(): string {
   // Use slate for normal progress per theme guidelines.
   // Status-colored bars are handled manually where needed.
   return "bg-slate-900";
@@ -19,7 +19,7 @@ export function ProgressSummary({
   rightCaption?: string;
   className?: string;
 }) {
-  const barColor = getProgressColor(value);
+  const barColor = getProgressColor();
 
   return (
     <div className={cn("space-y-1.5", className)}>

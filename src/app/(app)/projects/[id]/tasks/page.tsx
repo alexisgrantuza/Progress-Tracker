@@ -14,13 +14,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DeleteConfirmationButton } from "@/components/tasks/delete-confirmation-button";
 import { TaskForm } from "@/components/tasks/task-form";
-import { getProjectById } from "@/lib/data/sample-data";
+import { getProjectById } from "@/lib/data/db-data";
 import { formatArea, formatDate } from "@/lib/utils";
 
 export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/tasks">) {
   const { id } = await props.params;
-  const project = getProjectById(id);
+  const project = await getProjectById(id);
 
   if (!project) {
     notFound();
@@ -57,7 +58,15 @@ export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/
                       <p className="font-semibold text-slate-950">{task.name}</p>
                       <p className="mt-1 text-sm text-slate-500">{task.taskHeadName}</p>
                     </div>
-                    <StatusBadge status={task.status} />
+                    <div className="flex flex-col items-end gap-2">
+                      <StatusBadge status={task.status} />
+                      <DeleteConfirmationButton
+                        id={task.id}
+                        name={task.name}
+                        kind="task"
+                        size="xs"
+                      />
+                    </div>
                   </div>
                   <div className="mt-4 grid gap-3">
                     <ProgressSummary
@@ -70,7 +79,10 @@ export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/
                       <div>{formatDate(task.start_date)} - {formatDate(task.end_date)}</div>
                       <div className="inline-flex items-center gap-2">
                         <HardHat className="size-4 text-slate-400" />
-                        {task.skilled_workers} skilled / {task.helpers} helpers
+                        {task.skilled_workers} {task.worker_trade} / {task.helpers} helpers
+                      </div>
+                      <div>
+                        {task.output_per_hour} {task.unit}/hr = {formatArea(task.daily_output)} daily
                       </div>
                     </div>
                   </div>
@@ -86,8 +98,10 @@ export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/
                     <TableHead>Task Head</TableHead>
                     <TableHead>Schedule</TableHead>
                     <TableHead>Manpower</TableHead>
+                    <TableHead>Productivity</TableHead>
                     <TableHead>Progress</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -101,11 +115,20 @@ export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/
                       </TableCell>
                       <TableCell>{task.taskHeadName}</TableCell>
                       <TableCell>{formatDate(task.start_date)} - {formatDate(task.end_date)}</TableCell>
-                      <TableCell>{task.skilled_workers} skilled / {task.helpers} helpers</TableCell>
+                      <TableCell>{task.skilled_workers} {task.worker_trade} / {task.helpers} helpers</TableCell>
+                      <TableCell>
+                        <p className="text-sm text-slate-700">{task.output_per_hour} {task.unit}/hr</p>
+                        <p className="text-xs text-slate-500">
+                          {formatArea(task.daily_output)} daily / {formatArea(task.weekly_output)} weekly
+                        </p>
+                      </TableCell>
                       <TableCell className="min-w-[220px]">
                         <ProgressSummary label="Progress" value={task.progress_percentage} />
                       </TableCell>
                       <TableCell><StatusBadge status={task.status} /></TableCell>
+                      <TableCell className="text-right">
+                        <DeleteConfirmationButton id={task.id} name={task.name} kind="task" />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -116,9 +139,9 @@ export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/
       </SectionCard>
       <SectionCard
         title="Task setup validator"
-        description="Use the form below to validate manpower, standard output, and the required 1 skilled : 2 helpers rule."
+        description="Create specific tasks with manpower, standard output, and the required 1 skilled : 2 helpers rule."
       >
-        <TaskForm />
+        <TaskForm projectId={project.id} taskHeads={project.task_heads} />
       </SectionCard>
     </div>
   );

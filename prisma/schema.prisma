@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  email     String    @unique
+  role      String
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  projects  Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectName        String     @map("project_name")
+  location           String
+  startDate          DateTime   @map("start_date") @db.Date
+  endDate            DateTime   @map("end_date") @db.Date
+  totalTargetArea    Decimal    @default(0) @map("total_target_area") @db.Decimal(12, 2)
+  totalCompletedArea Decimal    @default(0) @map("total_completed_area") @db.Decimal(12, 2)
+  overallProgress    Decimal    @default(0) @map("overall_progress") @db.Decimal(8, 2)
+  status             String     @default("Planning")
+  createdById        String?    @map("created_by") @db.Uuid
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  createdBy          User?      @relation(fields: [createdById], references: [id])
+  taskHeads          TaskHead[]
+  reports            Report[]
+
+  @@map("projects")
+}
+
+model TaskHead {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId          String    @map("project_id") @db.Uuid
+  category           String    @default("Structural")
+  name               String
+  targetArea         Decimal   @default(0) @map("target_area") @db.Decimal(12, 2)
+  completedArea      Decimal   @default(0) @map("completed_area") @db.Decimal(12, 2)
+  progressPercentage Decimal   @default(0) @map("progress_percentage") @db.Decimal(8, 2)
+  startDate          DateTime  @map("start_date") @db.Date
+  endDate            DateTime  @map("end_date") @db.Date
+  status             String    @default("On Track")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks              Task[]
+
+  @@map("task_heads")
+}
+
+model Task {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskHeadId         String           @map("task_head_id") @db.Uuid
+  name               String
+  targetArea         Decimal          @map("target_area") @db.Decimal(12, 2)
+  unit               String           @default("sq.m")
+  completedArea      Decimal          @default(0) @map("completed_area") @db.Decimal(12, 2)
+  progressPercentage Decimal          @default(0) @map("progress_percentage") @db.Decimal(8, 2)
+  startDate          DateTime         @map("start_date") @db.Date
+  endDate            DateTime         @map("end_date") @db.Date
+  skilledWorkers     Int              @default(1) @map("skilled_workers")
+  helpers            Int              @default(2)
+  workerTrade        String           @default("Mason") @map("worker_trade")
+  outputPerHour      Decimal          @default(0) @map("output_per_hour") @db.Decimal(12, 4)
+  weeksPerMonth      Decimal          @default(4) @map("weeks_per_month") @db.Decimal(6, 2)
+  daysPerMonth       Int              @default(20) @map("days_per_month")
+  standardOutput     Decimal          @default(0) @map("standard_output") @db.Decimal(12, 2)
+  status             String           @default("On Track")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  taskHead           TaskHead         @relation(fields: [taskHeadId], references: [id], onDelete: Cascade)
+  progressUpdates    ProgressUpdate[]
+
+  @@map("tasks")
+}
+
+model ProgressUpdate {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskId              String   @map("task_id") @db.Uuid
+  updateType          String   @map("update_type")
+  dateCovered         DateTime @map("date_covered") @db.Date
+  actualCompletedArea Decimal  @default(0) @map("actual_completed_area") @db.Decimal(12, 2)
+  remarks             String?
+  updatedBy           String   @map("updated_by")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task                Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("progress_updates")
+}
+
+model ProductivityStandard {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  taskType       String   @map("task_type")
+  skilledWorkers Int      @default(1) @map("skilled_workers")
+  helpers        Int      @default(2)
+  standardOutput Decimal  @default(0) @map("standard_output") @db.Decimal(12, 2)
+  unit           String   @default("sq.m")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("productivity_standards")
+}
+
+model Report {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  month     String
+  summary   String
+  status    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}

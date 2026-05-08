@@ -4,18 +4,20 @@ import { FolderKanban, Gauge, Plus, TriangleAlert } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ProjectOverviewTable } from "@/components/projects/project-overview-table";
-import { getAppDataset } from "@/lib/data/sample-data";
+import { getAppDataset } from "@/lib/data/db-data";
 import { formatPercent } from "@/lib/utils";
 
-export default function ProjectsPage() {
-  const dataset = getAppDataset();
+export default async function ProjectsPage() {
+  const dataset = await getAppDataset();
   const activeProjects = dataset.projects.filter((p) => p.status !== "Completed");
   const criticalProjects = dataset.projects.filter((p) =>
     ["Critical", "Delayed", "At Risk"].includes(p.status),
   );
   const averageProgress =
-    dataset.projects.reduce((sum, p) => sum + p.overall_progress, 0) /
-    dataset.projects.length;
+    dataset.projects.length > 0
+      ? dataset.projects.reduce((sum, p) => sum + p.overall_progress, 0) /
+        dataset.projects.length
+      : 0;
 
   const stats = [
     {

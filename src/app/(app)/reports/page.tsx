@@ -1,9 +1,9 @@
 import { MonthlyReportBoard } from "@/components/reports/monthly-report-board";
 import { PageHeader } from "@/components/shared/page-header";
-import { getAppDataset } from "@/lib/data/sample-data";
+import { getAppDataset } from "@/lib/data/db-data";
 
-export default function ReportsPage() {
-  const dataset = getAppDataset();
+export default async function ReportsPage() {
+  const dataset = await getAppDataset();
 
   return (
     <div className="animate-page-in space-y-6">

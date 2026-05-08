@@ -1,8 +1,16 @@
+import { redirect } from "next/navigation";
 import { BarChart3, ClipboardCheck, HardHat } from "lucide-react";
 
 import { LoginForm } from "@/components/shared/login-form";
+import { getCurrentUser } from "@/lib/auth";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await getCurrentUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.22),_transparent_28%),linear-gradient(135deg,_#fff7ed_0%,_#ffffff_42%,_#e2e8f0_100%)] px-4 py-10">
       <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
@@ -21,8 +29,8 @@ export default function LoginPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-lg shadow-orange-100/40">
               <HardHat className="size-6 text-orange-600" />
-              <p className="mt-4 font-medium text-slate-950">Role-aware access</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Admin and field user demo roles with dashboard redirect.</p>
+              <p className="mt-4 font-medium text-slate-950">Secure sign-in</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Email and password authentication backed by your Supabase project.</p>
             </div>
             <div className="rounded-[28px] border border-white/70 bg-white/80 p-5 shadow-lg shadow-orange-100/40">
               <BarChart3 className="size-6 text-orange-600" />

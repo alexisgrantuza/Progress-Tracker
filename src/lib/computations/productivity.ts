@@ -36,6 +36,31 @@ export function calculateExpectedOutput(
   return standardOutput * workerSets * Math.max(workingDays, 0);
 }
 
+export function calculateProductivityOutputs(input: {
+  outputPerHour: number;
+  skilledWorkers: number;
+  hoursPerDay?: number;
+  workingDaysPerWeek?: number;
+  weeksPerMonth?: number;
+  daysPerMonth?: number;
+}) {
+  const hoursPerDay = input.hoursPerDay ?? 8;
+  const workingDaysPerWeek = input.workingDaysPerWeek ?? 5;
+  const weeksPerMonth = input.weeksPerMonth ?? 4;
+  const daysPerMonth = input.daysPerMonth ?? 20;
+  const dailyOutput = input.outputPerHour * input.skilledWorkers * hoursPerDay;
+  const weeklyOutput = dailyOutput * workingDaysPerWeek;
+  const monthlyOutputByWeeks = weeklyOutput * weeksPerMonth;
+  const monthlyOutputByDays = dailyOutput * daysPerMonth;
+
+  return {
+    dailyOutput: Math.round(dailyOutput * 100) / 100,
+    weeklyOutput: Math.round(weeklyOutput * 100) / 100,
+    monthlyOutputByWeeks: Math.round(monthlyOutputByWeeks * 100) / 100,
+    monthlyOutputByDays: Math.round(monthlyOutputByDays * 100) / 100,
+  };
+}
+
 export function computeProductivityInsight(input: {
   startDate: string;
   endDate: string;

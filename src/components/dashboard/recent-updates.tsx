@@ -17,7 +17,7 @@ export function RecentUpdates({ updates }: { updates: RecentProgressUpdate[] }) 
     <SectionCard
       title="Recent Progress Updates"
       description="Latest weekly and monthly site submissions with computed progress snapshots."
-      contentClassName="space-y-3"
+      contentClassName="max-h-[520px] space-y-3 overflow-y-auto pr-2"
     >
       {recent.length === 0 ? (
         <EmptyState

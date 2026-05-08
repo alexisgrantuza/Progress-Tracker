@@ -7,7 +7,7 @@ export default function NewProjectPage() {
       <PageHeader
         eyebrow="Projects"
         title="Create project"
-        description="Set the schedule baseline first, then add task heads and specific tasks so the system can compute target area, completed area, and overall progress automatically."
+        description="Set the fixed project area and schedule baseline first, then add task heads and specific tasks to track completed area and productivity progress."
       />
       <ProjectForm mode="create" />
     </div>

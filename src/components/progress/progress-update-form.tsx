@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Calculator, Info, Save, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -19,8 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { createProgressUpdate } from "@/lib/actions";
 import {
   progressUpdateSchema,
+  taskStatusSchema,
   type ProgressUpdateFormInput,
   type ProgressUpdateFormValues,
 } from "@/lib/validations/forms";
@@ -28,7 +32,10 @@ import { calculateProgress } from "@/lib/computations/progress";
 import { formatArea, formatPercent } from "@/lib/utils";
 import type { TaskSummary } from "@/types/project";
 
+const taskStatusOptions = taskStatusSchema.options;
+
 export function ProgressUpdateForm({ tasks }: { tasks: TaskSummary[] }) {
+  const router = useRouter();
   const form = useForm<ProgressUpdateFormInput, unknown, ProgressUpdateFormValues>({
     resolver: zodResolver(progressUpdateSchema),
     defaultValues: {
@@ -38,10 +45,12 @@ export function ProgressUpdateForm({ tasks }: { tasks: TaskSummary[] }) {
       actualCompletedArea: tasks[0]?.completed_area ?? 0,
       remarks: "",
       updatedBy: "Paolo Reyes",
+      status: tasks[0]?.status ?? "On Track",
     },
   });
 
   const taskId = useWatch({ control: form.control, name: "taskId" });
+  const selectedStatus = useWatch({ control: form.control, name: "status" });
   const actualCompletedArea = useWatch({ control: form.control, name: "actualCompletedArea" });
   const normalizedCompletedArea = Number(actualCompletedArea ?? 0);
   const selectedTask = tasks.find((t) => t.id === taskId) ?? tasks[0];
@@ -49,10 +58,26 @@ export function ProgressUpdateForm({ tasks }: { tasks: TaskSummary[] }) {
     ? calculateProgress(selectedTask.target_area, normalizedCompletedArea)
     : 0;
 
-  function onSubmit(values: ProgressUpdateFormValues) {
+  useEffect(() => {
+    if (!selectedTask) {
+      return;
+    }
+
+    form.setValue("status", selectedTask.status);
+  }, [form, selectedTask]);
+
+  async function onSubmit(values: ProgressUpdateFormValues) {
+    const result = await createProgressUpdate(values);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
     toast.success(
-      `${values.updateType} update captured. Computed progress: ${formatPercent(previewProgress)}.`,
+      `${values.updateType} update saved. Computed progress: ${formatPercent(previewProgress)}.`,
     );
+    router.refresh();
   }
 
   return (
@@ -147,6 +172,30 @@ export function ProgressUpdateForm({ tasks }: { tasks: TaskSummary[] }) {
             </div>
           </div>
 
+          <div className="space-y-1.5">
+            <Label className="text-sm font-semibold text-slate-700">Task status</Label>
+            <Select
+              value={selectedStatus ?? "On Track"}
+              onValueChange={(v) =>
+                form.setValue("status", v as ProgressUpdateFormValues["status"])
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {taskStatusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-400">
+              Use this to flag At Risk, Delayed, Critical, or Labor Productivity Issue for team monitoring.
+            </p>
+          </div>
+
           {/* Remarks */}
           <div className="space-y-1.5">
             <Label htmlFor="remarks" className="text-sm font-semibold text-slate-700">
@@ -162,9 +211,9 @@ export function ProgressUpdateForm({ tasks }: { tasks: TaskSummary[] }) {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
               <Send className="size-3.5" />
-              Submit update
+              {form.formState.isSubmitting ? "Submitting..." : "Submit update"}
             </Button>
             <Button type="button" variant="outline" size="sm">
               <Save className="size-3.5" />

@@ -19,19 +19,21 @@ import { SectionCard } from "@/components/shared/section-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProgressSummary } from "@/components/shared/progress-summary";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { getAppDataset } from "@/lib/data/sample-data";
+import { getAppDataset } from "@/lib/data/db-data";
 import { formatArea } from "@/lib/utils";
 
-export default function DashboardPage() {
-  const dataset = getAppDataset();
+export default async function DashboardPage() {
+  const dataset = await getAppDataset();
   const ongoingProjects = dataset.projects.filter((p) => p.status !== "Completed");
   const completedProjects = dataset.projects.filter((p) => p.status === "Completed");
   const delayedTasks = dataset.tasks.filter((t) => t.status === "Delayed");
   const criticalTasks = dataset.tasks.filter((t) => t.status === "Critical");
   const laborIssues = dataset.tasks.filter((t) => t.status === "Labor Productivity Issue");
   const overallProgress =
-    dataset.projects.reduce((sum, p) => sum + p.overall_progress, 0) /
-    dataset.projects.length;
+    dataset.projects.length > 0
+      ? dataset.projects.reduce((sum, p) => sum + p.overall_progress, 0) /
+        dataset.projects.length
+      : 0;
   const mostAdvancedProject = [...dataset.projects].sort(
     (a, b) => b.overall_progress - a.overall_progress,
   )[0];

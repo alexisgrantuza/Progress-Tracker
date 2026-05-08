@@ -1,7 +1,7 @@
 import { format, parseISO } from "date-fns";
 
 import { calculateProjectProgress, calculateTaskHeadProgress } from "@/lib/computations/progress";
-import { computeProductivityInsight } from "@/lib/computations/productivity";
+import { calculateProductivityOutputs, computeProductivityInsight } from "@/lib/computations/productivity";
 import { classifyTaskStatus } from "@/lib/computations/status";
 import type {
   ProgressUpdateRecord,
@@ -78,6 +78,7 @@ const taskHeads: TaskHeadRecord[] = [
   {
     id: "head-1",
     project_id: "project-1",
+    category: "Structural",
     name: "Installation of Walls",
     start_date: "2026-01-01",
     end_date: "2026-03-31",
@@ -86,6 +87,7 @@ const taskHeads: TaskHeadRecord[] = [
   {
     id: "head-2",
     project_id: "project-1",
+    category: "Structural",
     name: "Electrical Works",
     start_date: "2026-01-15",
     end_date: "2026-03-20",
@@ -94,6 +96,7 @@ const taskHeads: TaskHeadRecord[] = [
   {
     id: "head-3",
     project_id: "project-2",
+    category: "Architectural",
     name: "Finishing Works",
     start_date: "2026-02-10",
     end_date: "2026-06-15",
@@ -102,6 +105,7 @@ const taskHeads: TaskHeadRecord[] = [
   {
     id: "head-4",
     project_id: "project-3",
+    category: "Structural",
     name: "Plumbing Works",
     start_date: "2025-11-01",
     end_date: "2026-02-15",
@@ -109,7 +113,19 @@ const taskHeads: TaskHeadRecord[] = [
   },
 ];
 
-const tasks: TaskRecord[] = [
+type SampleTaskRecord = Omit<
+  TaskRecord,
+  | "worker_trade"
+  | "output_per_hour"
+  | "daily_output"
+  | "weekly_output"
+  | "monthly_output_by_weeks"
+  | "monthly_output_by_days"
+  | "weeks_per_month"
+  | "days_per_month"
+>;
+
+const sampleTasks: SampleTaskRecord[] = [
   {
     id: "task-1",
     task_head_id: "head-1",
@@ -237,6 +253,26 @@ const tasks: TaskRecord[] = [
     created_at: "2025-11-03T08:20:00.000Z",
   },
 ];
+
+const tasks: TaskRecord[] = sampleTasks.map((task) => {
+  const outputPerHour = task.standard_output / Math.max(task.skilled_workers * 8, 1);
+  const outputs = calculateProductivityOutputs({
+    outputPerHour,
+    skilledWorkers: task.skilled_workers,
+  });
+
+  return {
+    ...task,
+    worker_trade: task.name.toLowerCase().includes("paint") ? "Painter" : "Mason",
+    output_per_hour: Number(outputPerHour.toFixed(4)),
+    daily_output: outputs.dailyOutput,
+    weekly_output: outputs.weeklyOutput,
+    monthly_output_by_weeks: outputs.monthlyOutputByWeeks,
+    monthly_output_by_days: outputs.monthlyOutputByDays,
+    weeks_per_month: 4,
+    days_per_month: 20,
+  };
+});
 
 const progressUpdates: ProgressUpdateRecord[] = [
   {

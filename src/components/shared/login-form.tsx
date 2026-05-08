@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -9,41 +10,43 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { createDemoSessionPayload } from "@/lib/demo-session";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { loginSchema, type LoginFormValues } from "@/lib/validations/forms";
 
 export function LoginForm() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "paolo@tracker.local",
-      role: "Supervisor",
+      email: "",
+      password: "",
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
-    const payload = createDemoSessionPayload({
+    const supabase = createSupabaseBrowserClient();
+
+    if (!supabase) {
+      toast.error("Supabase is not configured. Add the project URL and publishable key to continue.");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
       email: values.email,
-      role: values.role,
+      password: values.password,
     });
 
-    await fetch("/api/demo-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ payload }),
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Signed in successfully.");
+    startTransition(() => {
+      router.replace("/dashboard");
+      router.refresh();
     });
-    toast.success(`Signed in as ${values.role}.`);
-    router.push("/dashboard");
   }
 
   return (
@@ -55,27 +58,25 @@ export function LoginForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" {...form.register("email")} />
+            <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
           </div>
+          {form.formState.errors.email ? (
+            <p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
+          ) : null}
           <div className="space-y-2">
-            <Label>Role</Label>
-            <Select
-              defaultValue={form.getValues("role")}
-              onValueChange={(value) => form.setValue("role", value as LoginFormValues["role"])}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Supervisor">Supervisor</SelectItem>
-                <SelectItem value="Site Engineer">Site Engineer</SelectItem>
-                <SelectItem value="QA/QC">QA/QC</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              {...form.register("password")}
+            />
           </div>
-          <Button type="submit" className="w-full">
-            Login to dashboard
+          {form.formState.errors.password ? (
+            <p className="text-sm text-red-600">{form.formState.errors.password.message}</p>
+          ) : null}
+          <Button type="submit" className="w-full" disabled={isPending || form.formState.isSubmitting}>
+            {isPending || form.formState.isSubmitting ? "Signing in..." : "Login to dashboard"}
           </Button>
         </form>
       </CardContent>

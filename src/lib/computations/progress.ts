@@ -7,7 +7,7 @@ export function roundToTwo(value: number) {
 export function calculateProgress(targetArea: number, completedArea: number) {
   if (targetArea <= 0) return 0;
 
-  return roundToTwo((completedArea / targetArea) * 100);
+  return Math.min(100, roundToTwo((completedArea / targetArea) * 100));
 }
 
 export function calculateTaskHeadProgress(tasks: TaskSummary[]) {

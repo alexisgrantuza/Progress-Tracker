@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createProject, updateProject } from "@/lib/actions";
 import {
   projectSchema,
   type ProjectFormInput,
@@ -18,9 +19,11 @@ import {
 export function ProjectForm({
   defaultValues,
   mode,
+  projectId,
 }: {
   defaultValues?: Partial<ProjectFormValues>;
   mode: "create" | "edit";
+  projectId?: string;
 }) {
   const router = useRouter();
   const form = useForm<ProjectFormInput, unknown, ProjectFormValues>({
@@ -28,19 +31,32 @@ export function ProjectForm({
     defaultValues: {
       project_name: defaultValues?.project_name ?? "",
       location: defaultValues?.location ?? "",
+      total_target_area: defaultValues?.total_target_area ?? 0,
       start_date: defaultValues?.start_date ?? "",
       end_date: defaultValues?.end_date ?? "",
-      created_by: defaultValues?.created_by ?? "user-admin",
     },
   });
 
-  function onSubmit(values: ProjectFormValues) {
+  async function onSubmit(values: ProjectFormValues) {
+    const result =
+      mode === "create"
+        ? await createProject(values)
+        : projectId
+          ? await updateProject(projectId, values)
+          : { ok: false as const, message: "Project id is missing." };
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
     toast.success(
       mode === "create"
-        ? `Project "${values.project_name}" prepared for Supabase save.`
-        : `Project "${values.project_name}" updated in MVP demo mode.`,
+        ? `Project "${values.project_name}" created.`
+        : `Project "${values.project_name}" updated.`,
     );
-    router.push("/projects");
+    router.push(result.id ? `/projects/${result.id}` : "/projects");
+    router.refresh();
   }
 
   return (
@@ -58,8 +74,14 @@ export function ProjectForm({
             <p className="text-xs text-rose-600">{form.formState.errors.location?.message}</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="created_by">Created by</Label>
-            <Input id="created_by" {...form.register("created_by")} />
+            <Label htmlFor="total_target_area">Project area</Label>
+            <Input
+              id="total_target_area"
+              type="number"
+              step="0.01"
+              {...form.register("total_target_area")}
+            />
+            <p className="text-xs text-rose-600">{form.formState.errors.total_target_area?.message}</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="start_date">Start date</Label>
@@ -71,11 +93,19 @@ export function ProjectForm({
           </div>
 
           <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600 lg:col-span-2">
-            Total target area, total completed area, and overall progress are auto-calculated from Task Heads and Specific Tasks after they are added.
+            Project area is the fixed baseline for overall progress. Task heads and specific tasks update completed area and progress, but they do not increase this project area.
           </div>
 
           <div className="flex gap-3 lg:col-span-2">
-            <Button type="submit">{mode === "create" ? "Create project" : "Save changes"}</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting
+                ? mode === "create"
+                  ? "Creating..."
+                  : "Saving..."
+                : mode === "create"
+                  ? "Create project"
+                  : "Save changes"}
+            </Button>
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>

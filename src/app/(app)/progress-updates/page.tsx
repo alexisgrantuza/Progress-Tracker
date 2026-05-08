@@ -1,9 +1,9 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { ProgressUpdateForm } from "@/components/progress/progress-update-form";
-import { getAppDataset } from "@/lib/data/sample-data";
+import { getAppDataset } from "@/lib/data/db-data";
 
-export default function ProgressUpdatesPage() {
-  const dataset = getAppDataset();
+export default async function ProgressUpdatesPage() {
+  const dataset = await getAppDataset();
 
   return (
     <div className="animate-page-in space-y-6">
