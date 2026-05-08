@@ -48,12 +48,21 @@ export const taskSchema = z
     unit: z.string().min(1, "Unit is required."),
     start_date: z.string().min(1, "Start date is required."),
     end_date: z.string().min(1, "End date is required."),
-    skilled_workers: z.coerce.number().int().min(1, "At least 1 skilled worker."),
-    helpers: z.coerce.number().int().min(2, "At least 2 helpers."),
+    supervisor_workers: z.coerce.number().int().min(0).default(0),
+    foreman_workers: z.coerce.number().int().min(0).default(0),
+    carpenter_workers: z.coerce.number().int().min(0).default(0),
+    mason_workers: z.coerce.number().int().min(0).default(1),
+    steelman_workers: z.coerce.number().int().min(0).default(0),
+    welder_workers: z.coerce.number().int().min(0).default(0),
+    painter_workers: z.coerce.number().int().min(0).default(0),
+    operator_workers: z.coerce.number().int().min(0).default(0),
+    skilled_workers: z.coerce.number().int().min(0).default(1),
+    helpers: z.coerce.number().int().min(1, "At least 1 helper is required for labor output."),
     worker_trade: workerTradeSchema.default("Mason"),
     output_per_hour: z.coerce
       .number()
       .positive("Output per hour must be greater than 0."),
+    time_hours: z.coerce.number().positive("Time must be greater than 0.").default(8),
     weeks_per_month: z.coerce
       .number()
       .positive("Weeks per month must be greater than 0.")
@@ -69,9 +78,21 @@ export const taskSchema = z
       .default(0),
     status: taskStatusSchema.default("On Track"),
   })
-  .refine((values) => values.helpers === values.skilled_workers * 2, {
-    message: "Helpers must follow the 1 skilled : 2 helpers rule.",
-    path: ["helpers"],
+  .transform((values) => ({
+    ...values,
+    skilled_workers:
+      values.supervisor_workers +
+      values.foreman_workers +
+      values.carpenter_workers +
+      values.mason_workers +
+      values.steelman_workers +
+      values.welder_workers +
+      values.painter_workers +
+      values.operator_workers,
+  }))
+  .refine((values) => values.skilled_workers > 0, {
+    message: "Add at least 1 skilled worker in the role columns.",
+    path: ["mason_workers"],
   });
 
 export const progressUpdateSchema = z.object({

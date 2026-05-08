@@ -10,6 +10,7 @@ import type {
   TaskHeadRecord,
   TaskHeadSummary,
   TaskRecord,
+  WorkerTrade,
   TaskSummary,
   UserProfile,
 } from "@/types/project";
@@ -117,10 +118,23 @@ type SampleTaskRecord = Omit<
   TaskRecord,
   | "worker_trade"
   | "output_per_hour"
+  | "time_hours"
+  | "supervisor_workers"
+  | "foreman_workers"
+  | "carpenter_workers"
+  | "mason_workers"
+  | "steelman_workers"
+  | "welder_workers"
+  | "painter_workers"
+  | "operator_workers"
   | "daily_output"
+  | "daily_labor_output"
   | "weekly_output"
+  | "weekly_labor_output"
   | "monthly_output_by_weeks"
+  | "monthly_labor_output_by_weeks"
   | "monthly_output_by_days"
+  | "monthly_labor_output_by_days"
   | "weeks_per_month"
   | "days_per_month"
 >;
@@ -256,19 +270,35 @@ const sampleTasks: SampleTaskRecord[] = [
 
 const tasks: TaskRecord[] = sampleTasks.map((task) => {
   const outputPerHour = task.standard_output / Math.max(task.skilled_workers * 8, 1);
+  const workerTrade = (task.name.toLowerCase().includes("paint") ? "Painter" : "Mason") as WorkerTrade;
   const outputs = calculateProductivityOutputs({
     outputPerHour,
     skilledWorkers: task.skilled_workers,
+    helpers: task.helpers,
+    hoursPerDay: 8,
   });
 
   return {
     ...task,
-    worker_trade: task.name.toLowerCase().includes("paint") ? "Painter" : "Mason",
+    supervisor_workers: 0,
+    foreman_workers: 0,
+    carpenter_workers: workerTrade === "Carpenter" ? task.skilled_workers : 0,
+    mason_workers: workerTrade === "Mason" ? task.skilled_workers : 0,
+    steelman_workers: workerTrade === "Steelman" ? task.skilled_workers : 0,
+    welder_workers: workerTrade === "Welder" ? task.skilled_workers : 0,
+    painter_workers: workerTrade === "Painter" ? task.skilled_workers : 0,
+    operator_workers: workerTrade === "Operator" ? task.skilled_workers : 0,
+    worker_trade: workerTrade,
     output_per_hour: Number(outputPerHour.toFixed(4)),
+    time_hours: 8,
     daily_output: outputs.dailyOutput,
+    daily_labor_output: outputs.dailyLaborOutput,
     weekly_output: outputs.weeklyOutput,
+    weekly_labor_output: outputs.weeklyLaborOutput,
     monthly_output_by_weeks: outputs.monthlyOutputByWeeks,
+    monthly_labor_output_by_weeks: outputs.monthlyLaborOutput,
     monthly_output_by_days: outputs.monthlyOutputByDays,
+    monthly_labor_output_by_days: outputs.monthlyLaborOutputByDays,
     weeks_per_month: 4,
     days_per_month: 20,
   };

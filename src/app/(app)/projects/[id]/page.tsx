@@ -212,16 +212,19 @@ export default async function ProjectDetailsPage(props: PageProps<"/projects/[id
 
                         <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-medium text-slate-500">
                           <span className="rounded-md bg-slate-100 px-2 py-1">
-                            {task.skilled_workers} {task.worker_trade}
+                            {task.skilled_workers} skilled
                           </span>
                           <span className="rounded-md bg-slate-100 px-2 py-1">
                             {task.helpers} helpers
                           </span>
                           <span className="rounded-md bg-slate-100 px-2 py-1">
-                            {task.output_per_hour} {task.unit}/hr
+                            {task.output_per_hour} {task.unit}/hr x {task.time_hours}h
                           </span>
                           <span className="rounded-md bg-slate-100 px-2 py-1">
-                            Daily {formatArea(task.daily_output)}
+                            Daily skilled {formatArea(task.daily_output)}
+                          </span>
+                          <span className="rounded-md bg-slate-100 px-2 py-1">
+                            Daily labor {formatArea(task.daily_labor_output)}
                           </span>
                         </div>
                       </div>

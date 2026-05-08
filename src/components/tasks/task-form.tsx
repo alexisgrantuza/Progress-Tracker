@@ -21,14 +21,22 @@ import { calculateProductivityOutputs } from "@/lib/computations/productivity";
 import {
   taskSchema,
   taskStatusSchema,
-  workerTradeSchema,
   type TaskFormInput,
   type TaskFormValues,
 } from "@/lib/validations/forms";
 import type { TaskHeadSummary } from "@/types/project";
 
 const taskStatusOptions = taskStatusSchema.options;
-const workerTradeOptions = workerTradeSchema.options;
+const skilledWorkerFields = [
+  ["supervisor_workers", "Supervisor"],
+  ["foreman_workers", "Foreman"],
+  ["carpenter_workers", "Carpenter"],
+  ["mason_workers", "Mason"],
+  ["steelman_workers", "Steelman"],
+  ["welder_workers", "Welder"],
+  ["painter_workers", "Painter"],
+  ["operator_workers", "Operator"],
+] as const;
 
 export function TaskForm({
   projectId,
@@ -53,10 +61,19 @@ export function TaskForm({
       unit: "sq.m",
       start_date: "",
       end_date: "",
+      supervisor_workers: 0,
+      foreman_workers: 0,
+      carpenter_workers: 0,
+      mason_workers: 1,
+      steelman_workers: 0,
+      welder_workers: 0,
+      painter_workers: 0,
+      operator_workers: 0,
       skilled_workers: 1,
       helpers: 2,
       worker_trade: "Mason",
       output_per_hour: 0,
+      time_hours: 8,
       weeks_per_month: 4,
       days_per_month: 20,
       standard_output: 0,
@@ -64,12 +81,30 @@ export function TaskForm({
     },
   });
   const outputPerHour = Number(useWatch({ control: form.control, name: "output_per_hour" }) ?? 0);
-  const skilledWorkers = Number(useWatch({ control: form.control, name: "skilled_workers" }) ?? 0);
+  const helpers = Number(useWatch({ control: form.control, name: "helpers" }) ?? 0);
+  const timeHours = Number(useWatch({ control: form.control, name: "time_hours" }) ?? 8);
   const weeksPerMonth = Number(useWatch({ control: form.control, name: "weeks_per_month" }) ?? 4);
   const daysPerMonth = Number(useWatch({ control: form.control, name: "days_per_month" }) ?? 20);
+  const supervisorWorkers = Number(useWatch({ control: form.control, name: "supervisor_workers" }) ?? 0);
+  const foremanWorkers = Number(useWatch({ control: form.control, name: "foreman_workers" }) ?? 0);
+  const carpenterWorkers = Number(useWatch({ control: form.control, name: "carpenter_workers" }) ?? 0);
+  const masonWorkers = Number(useWatch({ control: form.control, name: "mason_workers" }) ?? 0);
+  const steelmanWorkers = Number(useWatch({ control: form.control, name: "steelman_workers" }) ?? 0);
+  const welderWorkers = Number(useWatch({ control: form.control, name: "welder_workers" }) ?? 0);
+  const painterWorkers = Number(useWatch({ control: form.control, name: "painter_workers" }) ?? 0);
+  const operatorWorkers = Number(useWatch({ control: form.control, name: "operator_workers" }) ?? 0);
   const productivityOutputs = calculateProductivityOutputs({
     outputPerHour,
-    skilledWorkers,
+    supervisorWorkers,
+    foremanWorkers,
+    carpenterWorkers,
+    masonWorkers,
+    steelmanWorkers,
+    welderWorkers,
+    painterWorkers,
+    operatorWorkers,
+    helpers,
+    hoursPerDay: timeHours,
     weeksPerMonth,
     daysPerMonth,
   });
@@ -100,10 +135,19 @@ export function TaskForm({
       unit: "sq.m",
       start_date: "",
       end_date: "",
+      supervisor_workers: 0,
+      foreman_workers: 0,
+      carpenter_workers: 0,
+      mason_workers: 1,
+      steelman_workers: 0,
+      welder_workers: 0,
+      painter_workers: 0,
+      operator_workers: 0,
       skilled_workers: 1,
       helpers: 2,
       worker_trade: "Mason",
       output_per_hour: 0,
+      time_hours: 8,
       weeks_per_month: 4,
       days_per_month: 20,
       standard_output: 0,
@@ -156,34 +200,31 @@ export function TaskForm({
             <Label htmlFor="end_date">End date</Label>
             <Input id="end_date" type="date" {...form.register("end_date")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="skilled_workers">Skilled workers</Label>
-            <Input id="skilled_workers" type="number" {...form.register("skilled_workers")} />
-          </div>
-          <div className="space-y-2">
-            <Label>Skilled worker trade</Label>
-            <Select
-              defaultValue={form.getValues("worker_trade")}
-              onValueChange={(value) =>
-                form.setValue("worker_trade", value as TaskFormValues["worker_trade"])
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {workerTradeOptions.map((trade) => (
-                  <SelectItem key={trade} value={trade}>
-                    {trade}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-3 lg:col-span-2">
+            <div>
+              <Label>Skilled workers</Label>
+              <p className="mt-1 text-xs text-slate-500">
+                Sheet1 role columns. Total skilled workers: {productivityOutputs.totalSkilledWorkers}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {skilledWorkerFields.map(([field, label]) => (
+                <div key={field} className="space-y-1.5">
+                  <Label htmlFor={field} className="text-xs text-slate-500">
+                    {label}
+                  </Label>
+                  <Input id={field} type="number" min={0} {...form.register(field)} />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-rose-600">{form.formState.errors.mason_workers?.message}</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="helpers">Helpers / laborers</Label>
             <Input id="helpers" type="number" {...form.register("helpers")} />
-            <p className="text-xs text-slate-500">Linear rule: 1 skilled worker = 2 helpers.</p>
+            <p className="text-xs text-slate-500">
+              Sheet1 labor output divides skilled output by helpers.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="output_per_hour">Output per hour</Label>
@@ -194,10 +235,19 @@ export function TaskForm({
               {...form.register("output_per_hour")}
             />
             <p className="text-xs text-slate-500">
-              Base value from the company productivity rate.
+              Use the Slow, Average, or Fast value from Sheet1.
             </p>
           </div>
-          <div className="grid gap-4 lg:col-span-2 lg:grid-cols-2">
+          <div className="grid gap-4 lg:col-span-2 lg:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="time_hours">Time</Label>
+              <Input
+                id="time_hours"
+                type="number"
+                step="0.01"
+                {...form.register("time_hours")}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="weeks_per_month">Weeks per month</Label>
               <Input
@@ -212,26 +262,33 @@ export function TaskForm({
               <Input id="days_per_month" type="number" {...form.register("days_per_month")} />
             </div>
           </div>
-          <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm lg:col-span-2 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm lg:col-span-2 sm:grid-cols-2 xl:grid-cols-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Daily</p>
-              <p className="font-semibold text-slate-900">{productivityOutputs.dailyOutput} {form.getValues("unit")}</p>
-              <p className="text-xs text-slate-500">output/hr × skilled × 8</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Daily output per day</p>
+              <p className="font-semibold text-slate-900">
+                Skilled: {productivityOutputs.dailySkilledOutput} {form.getValues("unit")}
+              </p>
+              <p className="text-xs text-slate-500">
+                Labor: {productivityOutputs.dailyLaborOutput} {form.getValues("unit")}
+              </p>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Weekly</p>
-              <p className="font-semibold text-slate-900">{productivityOutputs.weeklyOutput} {form.getValues("unit")}</p>
-              <p className="text-xs text-slate-500">daily × 5 days</p>
+              <p className="font-semibold text-slate-900">
+                Skilled: {productivityOutputs.weeklySkilledOutput} {form.getValues("unit")}
+              </p>
+              <p className="text-xs text-slate-500">
+                Labor: {productivityOutputs.weeklyLaborOutput} {form.getValues("unit")}
+              </p>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Monthly by weeks</p>
-              <p className="font-semibold text-slate-900">{productivityOutputs.monthlyOutputByWeeks} {form.getValues("unit")}</p>
-              <p className="text-xs text-slate-500">weekly × weeks/month</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Monthly by days</p>
-              <p className="font-semibold text-slate-900">{productivityOutputs.monthlyOutputByDays} {form.getValues("unit")}</p>
-              <p className="text-xs text-slate-500">daily × days/month</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Monthly</p>
+              <p className="font-semibold text-slate-900">
+                Skilled: {productivityOutputs.monthlySkilledOutput} {form.getValues("unit")}
+              </p>
+              <p className="text-xs text-slate-500">
+                Labor: {productivityOutputs.monthlyLaborOutput} {form.getValues("unit")}
+              </p>
             </div>
           </div>
           <div className="space-y-2 lg:col-span-2">

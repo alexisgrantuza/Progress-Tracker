@@ -38,26 +38,62 @@ export function calculateExpectedOutput(
 
 export function calculateProductivityOutputs(input: {
   outputPerHour: number;
-  skilledWorkers: number;
+  skilledWorkers?: number;
+  supervisorWorkers?: number;
+  foremanWorkers?: number;
+  carpenterWorkers?: number;
+  masonWorkers?: number;
+  steelmanWorkers?: number;
+  welderWorkers?: number;
+  painterWorkers?: number;
+  operatorWorkers?: number;
+  helpers?: number;
   hoursPerDay?: number;
   workingDaysPerWeek?: number;
   weeksPerMonth?: number;
   daysPerMonth?: number;
 }) {
+  const totalSkilledWorkers =
+    input.skilledWorkers ??
+    (input.supervisorWorkers ?? 0) +
+      (input.foremanWorkers ?? 0) +
+      (input.carpenterWorkers ?? 0) +
+      (input.masonWorkers ?? 0) +
+      (input.steelmanWorkers ?? 0) +
+      (input.welderWorkers ?? 0) +
+      (input.painterWorkers ?? 0) +
+      (input.operatorWorkers ?? 0);
+  const helpers = input.helpers ?? 0;
   const hoursPerDay = input.hoursPerDay ?? 8;
   const workingDaysPerWeek = input.workingDaysPerWeek ?? 5;
   const weeksPerMonth = input.weeksPerMonth ?? 4;
   const daysPerMonth = input.daysPerMonth ?? 20;
-  const dailyOutput = input.outputPerHour * input.skilledWorkers * hoursPerDay;
-  const weeklyOutput = dailyOutput * workingDaysPerWeek;
-  const monthlyOutputByWeeks = weeklyOutput * weeksPerMonth;
-  const monthlyOutputByDays = dailyOutput * daysPerMonth;
+  const dailySkilledOutput = input.outputPerHour * hoursPerDay * totalSkilledWorkers;
+  const dailyLaborOutput = helpers > 0 ? dailySkilledOutput / helpers : 0;
+  const weeklySkilledOutput = dailySkilledOutput * workingDaysPerWeek;
+  const weeklyLaborOutput = dailyLaborOutput * workingDaysPerWeek;
+  const monthlySkilledOutput = weeklySkilledOutput * weeksPerMonth;
+  const monthlyLaborOutput = weeklyLaborOutput * weeksPerMonth;
+  const monthlySkilledOutputByDays = dailySkilledOutput * daysPerMonth;
+  const monthlyLaborOutputByDays = dailyLaborOutput * daysPerMonth;
+
+  const round = (value: number) => Math.round(value * 100) / 100;
 
   return {
-    dailyOutput: Math.round(dailyOutput * 100) / 100,
-    weeklyOutput: Math.round(weeklyOutput * 100) / 100,
-    monthlyOutputByWeeks: Math.round(monthlyOutputByWeeks * 100) / 100,
-    monthlyOutputByDays: Math.round(monthlyOutputByDays * 100) / 100,
+    totalSkilledWorkers,
+    totalWorkers: totalSkilledWorkers + helpers,
+    dailyOutput: round(dailySkilledOutput),
+    weeklyOutput: round(weeklySkilledOutput),
+    monthlyOutputByWeeks: round(monthlySkilledOutput),
+    monthlyOutputByDays: round(monthlySkilledOutputByDays),
+    dailySkilledOutput: round(dailySkilledOutput),
+    dailyLaborOutput: round(dailyLaborOutput),
+    weeklySkilledOutput: round(weeklySkilledOutput),
+    weeklyLaborOutput: round(weeklyLaborOutput),
+    monthlySkilledOutput: round(monthlySkilledOutput),
+    monthlyLaborOutput: round(monthlyLaborOutput),
+    monthlySkilledOutputByDays: round(monthlySkilledOutputByDays),
+    monthlyLaborOutputByDays: round(monthlyLaborOutputByDays),
   };
 }
 

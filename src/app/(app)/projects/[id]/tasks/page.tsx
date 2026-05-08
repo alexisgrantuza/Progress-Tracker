@@ -79,10 +79,12 @@ export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/
                       <div>{formatDate(task.start_date)} - {formatDate(task.end_date)}</div>
                       <div className="inline-flex items-center gap-2">
                         <HardHat className="size-4 text-slate-400" />
-                        {task.skilled_workers} {task.worker_trade} / {task.helpers} helpers
+                        {task.skilled_workers} skilled / {task.helpers} helpers
                       </div>
                       <div>
-                        {task.output_per_hour} {task.unit}/hr = {formatArea(task.daily_output)} daily
+                        {task.output_per_hour} {task.unit}/hr x {task.time_hours}h ={" "}
+                        {formatArea(task.daily_output)} skilled daily /{" "}
+                        {formatArea(task.daily_labor_output)} labor daily
                       </div>
                     </div>
                   </div>
@@ -115,11 +117,16 @@ export default async function ProjectTasksPage(props: PageProps<"/projects/[id]/
                       </TableCell>
                       <TableCell>{task.taskHeadName}</TableCell>
                       <TableCell>{formatDate(task.start_date)} - {formatDate(task.end_date)}</TableCell>
-                      <TableCell>{task.skilled_workers} {task.worker_trade} / {task.helpers} helpers</TableCell>
+                      <TableCell>{task.skilled_workers} skilled / {task.helpers} helpers</TableCell>
                       <TableCell>
-                        <p className="text-sm text-slate-700">{task.output_per_hour} {task.unit}/hr</p>
+                        <p className="text-sm text-slate-700">
+                          {task.output_per_hour} {task.unit}/hr x {task.time_hours}h
+                        </p>
                         <p className="text-xs text-slate-500">
-                          {formatArea(task.daily_output)} daily / {formatArea(task.weekly_output)} weekly
+                          Skilled {formatArea(task.daily_output)} daily / {formatArea(task.weekly_output)} weekly
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Labor {formatArea(task.daily_labor_output)} daily / {formatArea(task.weekly_labor_output)} weekly
                         </p>
                       </TableCell>
                       <TableCell className="min-w-[220px]">
