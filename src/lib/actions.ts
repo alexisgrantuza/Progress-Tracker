@@ -240,6 +240,22 @@ export async function updateProject(projectId: string, values: ProjectFormValues
   return { ok: true, id: projectId };
 }
 
+export async function deleteProject(projectId: string): Promise<ActionResult> {
+  const user = await requireCurrentUserProfile();
+  const canAccessProject = await assertProjectAccess(projectId, user.id);
+
+  if (!canAccessProject) {
+    return { ok: false, message: "Project was not found or was already deleted." };
+  }
+
+  await prisma.project.delete({
+    where: { id: projectId },
+  });
+  refreshAppPaths(projectId);
+
+  return { ok: true, id: projectId };
+}
+
 export async function createTaskHead(projectId: string, values: TaskHeadFormValues): Promise<ActionResult> {
   const parsed = taskHeadSchema.safeParse(values);
 

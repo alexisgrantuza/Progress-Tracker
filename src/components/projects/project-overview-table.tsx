@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { ProgressSummary } from "@/components/shared/progress-summary";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { ProjectDeleteButton } from "@/components/projects/project-delete-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -113,13 +114,19 @@ export function ProjectOverviewTable({ projects }: { projects: ProjectSummary[] 
                   rightCaption={formatArea(project.total_target_area)}
                   className="mt-3"
                 />
-                <div className="mt-3 border-t border-slate-100 pt-3">
+                <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
                   <Button asChild variant="outline" size="sm" className="w-full text-xs">
                     <Link href={`/projects/${project.id}`}>
                       Open project
                       <ExternalLink className="size-3" />
                     </Link>
                   </Button>
+                  <ProjectDeleteButton
+                    projectId={project.id}
+                    projectName={project.project_name}
+                    taskHeadCount={project.task_heads.length}
+                    className="w-full text-xs"
+                  />
                 </div>
               </div>
             ))}
@@ -177,10 +184,19 @@ export function ProjectOverviewTable({ projects }: { projects: ProjectSummary[] 
                       <td className="px-4 py-4">
                         <StatusBadge status={project.status} />
                       </td>
-                      <td className="px-4 py-4 text-right">
-                        <Button asChild variant="outline" size="sm" className="text-xs">
-                          <Link href={`/projects/${project.id}`}>Open</Link>
-                        </Button>
+                      <td className="px-4 py-4">
+                        <div className="flex justify-end gap-2">
+                          <Button asChild variant="outline" size="sm" className="text-xs">
+                            <Link href={`/projects/${project.id}`}>Open</Link>
+                          </Button>
+                          <ProjectDeleteButton
+                            projectId={project.id}
+                            projectName={project.project_name}
+                            taskHeadCount={project.task_heads.length}
+                            size="sm"
+                            className="text-xs"
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))}

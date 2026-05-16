@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarClock, CircleFadingArrowUp, Edit, Hammer, Layers, Ru
 
 import { PageHeader } from "@/components/shared/page-header";
 import { ProgressSummary } from "@/components/shared/progress-summary";
+import { ProjectDeleteButton } from "@/components/projects/project-delete-button";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,12 @@ export default async function ProjectDetailsPage(props: PageProps<"/projects/[id
                 Edit project
               </Link>
             </Button>
+            <ProjectDeleteButton
+              projectId={project.id}
+              projectName={project.project_name}
+              taskHeadCount={project.task_heads.length}
+              redirectToProjects
+            />
             <Button asChild size="sm">
               <Link href={`/projects/${project.id}/task-heads`}>
                 <Layers className="size-3.5" />
